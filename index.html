@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <script>
+      (function() {
+        try {
+          var _origFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return _origFetch; },
+            set: function(fn) { _origFetch = fn; },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {}
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Arcade Game Hub</title>
+    <meta name="description" content="All-in-one interactive arcade library featuring 14 classic, puzzle, strategy, and action games with high score tracking, sound effects, and Google Play Games sync." />
+    <meta property="og:title" content="Arcade Game Hub" />
+    <meta property="og:description" content="All-in-one interactive arcade library featuring 14 classic, puzzle, strategy, and action games with high score tracking, sound effects, and Google Play Games sync." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden font-sans">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

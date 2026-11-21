@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕹️ صالة الأركيد</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+    background: radial-gradient(circle at 50% -10%, #221040 0%, #0b0b16 45%, #04040a 100%);
+    color: #e8e8f5; min-height: 100vh; padding: 26px 16px 60px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  header { text-align: center; margin-bottom: 30px; }
+  h1 {
+    font-size: clamp(1.7rem, 5.5vw, 2.9rem);
+    background: linear-gradient(90deg, #00f0ff, #ff2d95, #ffd700);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: 3px; filter: drop-shadow(0 0 20px rgba(0, 240, 255, .35));
+  }
+  header p { color: #8a8ab0; margin-top: 10px; font-size: .95rem; }
+  .library {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px; max-width: 1100px; margin: 0 auto;
+  }
+  .card {
+    font-family: inherit; color: inherit;
+    background: linear-gradient(160deg, rgba(32,32,58,.92), rgba(13,13,26,.96));
+    border: 1px solid rgba(0, 240, 255, .16); border-radius: 18px;
+    padding: 22px 16px 20px; cursor: pointer; text-align: center;
+    transition: transform .22s ease, border-color .22s, box-shadow .22s;
+    position: relative; overflow: hidden;
+  }
+  .card::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(0,240,255,.16), transparent 65%);
+    opacity: 0; transition: opacity .25s;
+  }
+  .card:hover { transform: translateY(-7px); border-color: rgba(0,240,255,.65); box-shadow: 0 14px 44px rgba(0,240,255,.18); }
+  .card:hover::after { opacity: 1; }
+  .card:active { transform: translateY(-2px) scale(.99); }
+  .card .icon { font-size: 2.7rem; display: block; margin-bottom: 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,.6)); }
+  .card h3 { font-size: 1.08rem; margin-bottom: 7px; color: #fff; font-weight: 700; }
+  .card p { font-size: .82rem; color: #8f8fb5; line-height: 1.55; }
+  .player { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 620px; margin: 0 auto; }
+  .player-bar {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; background: rgba(20, 20, 42, .85);
+    border: 1px solid rgba(0, 240, 255, .18); border-radius: 14px;
+    padding: 10px 14px; font-size: .92rem; backdrop-filter: blur(6px);
+  }
+  .ptitle { font-weight: 700; color: #9fe8ff; white-space: nowrap; }
+  .pstatus { color: #ffd700; font-weight: 700; font-size: .85rem; text-align: center; flex: 1; }
+  .btn {
+    background: linear-gradient(135deg, #00f0ff, #0088ff); color: #04121a;
+    border: none; padding: 9px 18px; border-radius: 10px; font-weight: 700;
+    font-family: inherit; font-size: .86rem; cursor: pointer; transition: .18s; white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(1.16); transform: scale(1.05); }
+  .btn:active { transform: scale(.97); }
+  .btn.ghost { background: transparent; color: #9fe8ff; border: 1px solid rgba(0, 240, 255, .42); }
+  .btn.ghost:hover { background: rgba(0, 240, 255, .1); }
+  .canvas-wrap { position: relative; line-height: 0; }
+  canvas {
+    display: block; max-width: 100%; height: auto; border-radius: 16px;
+    background: #05050c; touch-action: none;
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, .28), 0 0 46px rgba(0, 240, 255, .13), 0 22px 60px rgba(0, 0, 0, .65);
+  }
+  .overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(5, 5, 16, .84); backdrop-filter: blur(4px);
+    border-radius: 16px; line-height: 1.6; animation: fade .22s ease;
+  }
+  @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+  .overlay-box { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 22px; text-align: center; }
+  .overlay-box h2 { font-size: 1.45rem; color: #fff; }
+  .overlay-box p { color: #9fe8ff; font-size: .95rem; }
+  .hint { color: #7171a0; font-size: .82rem; text-align: center; min-height: 1.2em; padding: 0 8px; }
+  .hidden { display: none !important; }
+  @media (max-width: 420px) {
+    .library { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { padding: 16px 10px; }
+    .card .icon { font-size: 2.1rem; }
+    .card h3 { font-size: .95rem; }
+    .card p { font-size: .72rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🕹️ صالة الأركيد</h1>
+  <p>اختر لعبتك المفضلة وابدأ اللعب</p>
+</header>
+
+<main class="library" id="library"></main>
+
+<section class="player hidden" id="player">
+  <div class="player-bar">
+    <span class="ptitle" id="gameTitle"></span>
+    <span class="pstatus" id="status"></span>
+    <button class="btn ghost" id="backBtn">رجوع ⟵</button>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="480" height="440"></canvas>
+    <div class="overlay hidden" id="overlay"></div>
+  </div>
+  <p class="hint" id="hint"></p>
+</section>
+
+<script>
+/* =========================================================
+   أدوات
+   ========================================================= */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function circleRect(cx, cy, r, rx, ry, rw, rh) {
+  const nx = clamp(cx, rx, rx + rw);
+  const ny = clamp(cy, ry, ry + rh);
+  const dx = cx - nx, dy = cy - ny;
+  return dx * dx + dy * dy < r * r;
+}
+
+/* =========================================================
+   إدخال
+   ========================================================= */
+const input = {
+  keys: new Set(), pressed: new Set(),
+  pointer: { x: 0, y: 0, down: false, clicked: false, moved: false },
+  swipe: null
+};
+let downPos = null;
+
+window.addEventListener('keydown', (e) => {
+  if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+  if (!input.keys.has(e.key)) input.pressed.add(e.key);
+  input.keys.add(e.key);
+});
+window.addEventListener('keyup', (e) => input.keys.delete(e.key));
+
+/* =========================================================
+   DOM / API
+   ========================================================= */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const libraryEl = document.getElementById('library');
+const playerEl = document.getElementById('player');
+const overlayEl = document.getElementById('overlay');
+const gameTitleEl = document.getElementById('gameTitle');
+const statusEl = document.getElementById('status');
+const hintEl = document.getElementById('hint');
+const backBtn = document.getElementById('backBtn');
+
+function toCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (canvas.width / r.width), y: (e.clientY - r.top) * (canvas.height / r.height) };
+}
+canvas.addEventListener('pointerdown', (e) => {
+  const p = toCanvas(e);
+  input.pointer.x = p.x; input.pointer.y = p.y;
+  input.pointer.down = true; input.pointer.clicked = true; input.pointer.moved = true;
+  downPos = { x: e.clientX, y: e.clientY };
+});
+canvas.addEventListener('pointermove', (e) => {
+  const p = toCanvas(e);
+  input.pointer.x = p.x; input.pointer.y = p.y;
+  input.pointer.moved = true;
+});
+window.addEventListener('pointerup', (e) => {
+  input.pointer.down = false;
+  if (downPos) {
+    const dx = e.clientX - downPos.x, dy = e.clientY - downPos.y;
+    if (Math.hypot(dx, dy) > 40) input.swipe = { dx, dy };
+    downPos = null;
+  }
+});
+
+function showOverlay({ title, sub, btn, action }) {
+  overlayEl.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'overlay-box';
+  const h = document.createElement('h2');
+  h.textContent = title; box.appendChild(h);
+  if (sub) { const p = document.createElement('p'); p.textContent = sub; box.appendChild(p); }
+  if (btn) {
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = btn;
+    b.addEventListener('click', (e) => { e.stopPropagation(); action && action(); });
+    box.appendChild(b);
+  }
+  overlayEl.appendChild(box);
+  overlayEl.classList.remove('hidden');
+}
+function hideOverlay() { overlayEl.classList.add('hidden'); overlayEl.innerHTML = ''; }
+
+const api = {
+  canvas, ctx,
+  get W() { return canvas.width; },
+  get H() { return canvas.height; },
+  setStatus(t) { statusEl.textContent = t; },
+  showOverlay, hideOverlay
+};
+
+/* =========================================================
+   المحرك
+   ========================================================= */
+let currentGame = null;
+let rafId = null;
+let lastTime = 0;
+
+function loop(now) {
+  rafId = requestAnimationFrame(loop);
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  if (!currentGame) return;
+  currentGame.update(dt, api);
+  currentGame.draw(ctx, api);
+  input.pressed.clear();
+  input.pointer.clicked = false;
+  input.swipe = null;
+}
+
+function startGame(factory) {
+  if (rafId) cancelAnimationFrame(rafId);
+  const g = factory();
+  currentGame = g;
+  canvas.width = g.w; canvas.height = g.h;
+  gameTitleEl.textContent = g.icon + ' ' + g.title;
+  hintEl.textContent = g.hint || '';
+  statusEl.textContent = '';
+  hideOverlay();
+  libraryEl.classList.add('hidden');
+  playerEl.classList.remove('hidden');
+  input.keys.clear(); input.pressed.clear();
+  input.pointer.clicked = false; input.pointer.moved = false; input.swipe = null;
+  g.setup(api);
+  lastTime = performance.now();
+  rafId = requestAnimationFrame(loop);
+}
+function goBack() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null; currentGame = null;
+  hideOverlay();
+  playerEl.classList.add('hidden');
+  libraryEl.classList.remove('hidden');
+  statusEl.textContent = '';
+}
+backBtn.addEventListener('click', goBack);
+
+/* =========================================================
+   🐍 الثعبان
+   ========================================================= */
+function makeSnake() {
+  const CELL = 22, COLS = 18, ROWS = 18;
+  let snake, dir, nextDir, food, acc, stepTime, score, dead;
+  const g = {
+    title: 'الثعبان', icon: '🐍', desc: 'التهم التفاح واكبر دون أن تصطدم',
+    hint: 'الأسهم أو WASD للحركة — وعلى الجوال اسحب بإصبعك',
+    w: COLS * CELL, h: ROWS * CELL,
+    setup(a) {
+      snake = [{ x: 9, y: 9 }, { x: 8, y: 9 }, { x: 7, y: 9 }];
+      dir = { x: 1, y: 0 }; nextDir = { x: 1, y: 0 };
+      acc = 0; stepTime = 0.145; score = 0; dead = false;
+      food = randomFood(); a.setStatus('النقاط: 0');
+    },
+    update(dt, a) {
+      if (dead) return;
+      const p = input.pressed;
+      let nd = null;
+      if (p.has('ArrowUp') || p.has('w') || p.has('W')) nd = { x: 0, y: -1 };
+      else if (p.has('ArrowDown') || p.has('s') || p.has('S')) nd = { x: 0, y: 1 };
+      else if (p.has('ArrowLeft') || p.has('a') || p.has('A')) nd = { x: -1, y: 0 };
+      else if (p.has('ArrowRight') || p.has('d') || p.has('D')) nd = { x: 1, y: 0 };
+      if (input.swipe) {
+        const { dx, dy } = input.swipe;
+        nd = Math.abs(dx) > Math.abs(dy) ? { x: dx > 0 ? 1 : -1, y: 0 } : { x: 0, y: dy > 0 ? 1 : -1 };
+      }
+      if (nd && !(nd.x === -dir.x && nd.y === -dir.y)) nextDir = nd;
+      acc += dt;
+      let guard = 0;
+      while (acc >= stepTime && !dead && guard++ < 8) { acc -= stepTime; step(a); }
+    },
+    draw(c, a) {
+      c.fillStyle = '#08130e'; c.fillRect(0, 0, a.W, a.H);
+      c.strokeStyle = 'rgba(0,255,150,.05)'; c.lineWidth = 1;
+      for (let i = 0; i <= COLS; i++) {
+        c.beginPath(); c.moveTo(i * CELL, 0); c.lineTo(i * CELL, a.H); c.stroke();
+        c.beginPath(); c.moveTo(0, i * CELL); c.lineTo(a.W, i * CELL); c.stroke();
+      }
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = (CELL - 3) + 'px serif';
+      c.fillText('🍎', food.x * CELL + CELL / 2, food.y * CELL + CELL / 2 + 1);
+      for (let i = snake.length - 1; i >= 0; i--) {
+        const s = snake[i];
+        const t = i / Math.max(1, snake.length - 1);
+        c.fillStyle = i === 0 ? '#9dffc7' : `hsl(${150 - t * 30} 88% ${60 - t * 22}%)`;
+        c.shadowColor = i === 0 ? '#00ff9d' : 'transparent';
+        c.shadowBlur = i === 0 ? 16 : 0;
+        roundRect(c, s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4, 6); c.fill();
+      }
+      c.shadowBlur = 0;
+    }
+  };
+  function randomFood() {
+    let p, guard = 0;
+    do { p = { x: randInt(0, COLS - 1), y: randInt(0, ROWS - 1) }; }
+    while (snake.some(s => s.x === p.x && s.y === p.y) && guard++ < 500);
+    return p;
+  }
+  function step(a) {
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return die(a);
+    for (let i = 0; i < snake.length - 1; i++)
+      if (snake[i].x === head.x && snake[i].y === head.y) return die(a);
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score += 10; a.setStatus('النقاط: ' + score);
+      food = randomFood(); stepTime = Math.max(0.062, stepTime - 0.004);
+    } else snake.pop();
+  }
+  function die(a) {
+    dead = true;
+    a.showOverlay({ title: 'انتهت اللعبة 💀', sub: 'نقاطك: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+  }
+  return g;
+}
+
+/* =========================================================
+   🧱 كاسر الطوب
+   ========================================================= */
+function makeBreakout() {
+  const W = 480, H = 440;
+  const COLS = 8, ROWS = 5, BW = 52, BH = 18, GAP = 6, TOP = 64;
+  const LEFT = (W - (COLS * BW + (COLS - 1) * GAP)) / 2;
+  const COLORS = ['#ff2d95', '#ff8a00', '#ffd700', '#7CFFB2', '#00f0ff'];
+  let paddle, ball, bricks, score, lives, launched, over;
+  const g = {
+    title: 'كاسر الطوب', icon: '🧱', desc: 'حطّم كل الطوب قبل أن تفقد كراتك',
+    hint: 'حرّك الفأرة أو الأسهم — انقر أو مسافة للإطلاق',
+    w: W, h: H,
+    setup(a) {
+      paddle = { w: 92, h: 12, x: W / 2 - 46, y: H - 38, speed: 430 };
+      bricks = [];
+      for (let r = 0; r < ROWS; r++) for (let cc = 0; cc < COLS; cc++)
+        bricks.push({ x: LEFT + cc * (BW + GAP), y: TOP + r * (BH + GAP), w: BW, h: BH, alive: true, color: COLORS[r % COLORS.length] });
+      score = 0; lives = 3; over = false; resetBall(a);
+    },
+    update(dt, a) {
+      if (over) return;
+      if (input.pointer.moved) paddle.x = input.pointer.x - paddle.w / 2;
+      if (input.keys.has('ArrowLeft') || input.keys.has('a')) paddle.x -= paddle.speed * dt;
+      if (input.keys.has('ArrowRight') || input.keys.has('d')) paddle.x += paddle.speed * dt;
+      paddle.x = clamp(paddle.x, 0, W - paddle.w);
+      if (!launched) {
+        ball.x = paddle.x + paddle.w / 2; ball.y = paddle.y - ball.r - 2;
+        if (input.pressed.has(' ') || input.pointer.clicked) {
+          launched = true;
+          const ang = -Math.PI / 2 + rand(-0.35, 0.35);
+          ball.vx = Math.cos(ang) * ball.speed; ball.vy = Math.sin(ang) * ball.speed;
+        }
+        return;
+      }
+      const steps = 5, sdt = dt / steps;
+      for (let s = 0; s < steps; s++) {
+        ball.x += ball.vx * sdt; ball.y += ball.vy * sdt;
+        if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+        if (ball.vy > 0 && ball.y + ball.r > paddle.y && ball.y - ball.r < paddle.y + paddle.h &&
+            ball.x + ball.r > paddle.x && ball.x - ball.r < paddle.x + paddle.w) {
+          ball.y = paddle.y - ball.r;
+          const rel = clamp((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2), -1, 1);
+          const ang = rel * 1.05;
+          const sp = Math.hypot(ball.vx, ball.vy);
+          ball.vx = Math.sin(ang) * sp; ball.vy = -Math.cos(ang) * sp;
+        }
+        for (const b of bricks) {
+          if (!b.alive) continue;
+          if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+            b.alive = false; score += 10;
+            a.setStatus('النقاط: ' + score + ' • الأرواح: ' + '❤️'.repeat(lives));
+            const ox = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
+            const oy = Math.min(ball.y + ball.r - b.y, b.y + b.h - (ball.y - ball.r));
+            if (ox < oy) ball.vx *= -1; else ball.vy *= -1;
+            break;
+          }
+        }
+        if (bricks.every(b => !b.alive)) {
+          over = true;
+          a.showOverlay({ title: 'أحسنت! 🏆', sub: 'النقاط النهائية: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+          return;
+        }
+        if (ball.y - ball.r > H) {
+          lives--;
+          if (lives <= 0) {
+            over = true;
+            a.showOverlay({ title: 'انتهت اللعبة 💀', sub: 'نقاطك: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+          } else { resetBall(a); a.setStatus('النقاط: ' + score + ' • الأرواح: ' + '❤️'.repeat(lives)); }
+          return;
+        }
+      }
+    },
+    draw(c, a) {
+      c.fillStyle = '#0a0616'; c.fillRect(0, 0, W, H);
+      for (const b of bricks) {
+        if (!b.alive) continue;
+        c.fillStyle = b.color; c.shadowColor = b.color; c.shadowBlur = 10;
+        roundRect(c, b.x, b.y, b.w, b.h, 5); c.fill();
+      }
+      c.shadowBlur = 0;
+      const pg = c.createLinearGradient(paddle.x, 0, paddle.x + paddle.w, 0);
+      pg.addColorStop(0, '#00f0ff'); pg.addColorStop(1, '#7CFFB2');
+      c.fillStyle = pg; c.shadowColor = '#00f0ff'; c.shadowBlur = 18;
+      roundRect(c, paddle.x, paddle.y, paddle.w, paddle.h, 6); c.fill();
+      c.fillStyle = '#fff'; c.shadowColor = '#00f0ff'; c.shadowBlur = 20;
+      c.beginPath(); c.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); c.fill();
+      c.shadowBlur = 0;
+      if (!launched && !over) {
+        c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '15px sans-serif';
+        c.textAlign = 'center'; c.fillText('انقر أو اضغط مسافة للإطلاق', W / 2, H / 2 + 50);
+      }
+    }
+  };
+  function resetBall(a) {
+    ball = { x: paddle.x + paddle.w / 2, y: paddle.y - 12, r: 7, vx: 0, vy: 0, speed: 330 };
+    launched = false;
+    if (a) a.setStatus('النقاط: ' + score + ' • الأرواح: ' + '❤️'.repeat(lives));
+  }
+  return g;
+}
+
+/* =========================================================
+   🏓 بونغ
+   ========================================================= */
+function makePong() {
+  const W = 480, H = 380, PW = 12, PH = 74, M = 18, WIN = 5;
+  let player, ai, ball, ps, as, over, serveTimer;
+  const g = {
+    title: 'بونغ', icon: '🏓', desc: 'تحدَّ الحاسوب في تنس الطاولة الكلاسيكي',
+    hint: 'حرّك المضرب بالفأرة أو بالسهمين ↑ ↓',
+    w: W, h: H,
+    setup(a) {
+      player = { x: M, y: H / 2 - PH / 2, w: PW, h: PH, speed: 430 };
+      ai = { x: W - M - PW, y: H / 2 - PH / 2, w: PW, h: PH, speed: 300 };
+      ps = 0; as = 0; over = false; serveTimer = 0.7;
+      ball = { x: W / 2, y: H / 2, r: 8, vx: 0, vy: 0, speed: 300 };
+      a.setStatus('أنت 0 — 0 الحاسوب');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (input.pointer.moved) player.y = input.pointer.y - PH / 2;
+      if (input.keys.has('ArrowUp') || input.keys.has('w')) player.y -= player.speed * dt;
+      if (input.keys.has('ArrowDown') || input.keys.has('s')) player.y += player.speed * dt;
+      player.y = clamp(player.y, 0, H - PH);
+      if (serveTimer > 0) {
+        serveTimer -= dt;
+        ball.x = W / 2; ball.y = H / 2; ball.vx = 0; ball.vy = 0;
+        if (serveTimer <= 0) {
+          const d = Math.random() < 0.5 ? 1 : -1;
+          const ang = rand(-0.45, 0.45);
+          ball.vx = Math.cos(ang) * ball.speed * d;
+          ball.vy = Math.sin(ang) * ball.speed;
+        }
+        return;
+      }
+      const target = ball.y - PH / 2;
+      ai.y += clamp(target - ai.y, -ai.speed * dt, ai.speed * dt);
+      ai.y = clamp(ai.y, 0, H - PH);
+      const steps = 6, sdt = dt / steps;
+      for (let s = 0; s < steps; s++) {
+        ball.x += ball.vx * sdt; ball.y += ball.vy * sdt;
+        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+        if (ball.y + ball.r > H) { ball.y = H - ball.r; ball.vy = -Math.abs(ball.vy); }
+        if (ball.vx < 0 && ball.x - ball.r < player.x + player.w && ball.x + ball.r > player.x &&
+            ball.y > player.y && ball.y < player.y + player.h) bounce(player, 1);
+        if (ball.vx > 0 && ball.x + ball.r > ai.x && ball.x - ball.r < ai.x + ai.w &&
+            ball.y > ai.y && ball.y < ai.y + ai.h) bounce(ai, -1);
+        if (ball.x < -40) { as++; return point(a); }
+        if (ball.x > W + 40) { ps++; return point(a); }
+      }
+    },
+    draw(c, a) {
+      c.fillStyle = '#0a0614'; c.fillRect(0, 0, W, H);
+      c.strokeStyle = 'rgba(0,240,255,.18)'; c.lineWidth = 3; c.setLineDash([10, 14]);
+      c.beginPath(); c.moveTo(W / 2, 0); c.lineTo(W / 2, H); c.stroke();
+      c.setLineDash([]);
+      c.font = 'bold 64px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = 'rgba(255,45,149,.16)'; c.fillText(String(ps), W / 2 - 60, 58);
+      c.fillStyle = 'rgba(0,240,255,.16)'; c.fillText(String(as), W / 2 + 60, 58);
+      c.shadowBlur = 18; c.shadowColor = '#00f0ff'; c.fillStyle = '#9fe8ff';
+      roundRect(c, player.x, player.y, PW, PH, 6); c.fill();
+      c.shadowColor = '#ff2d95'; c.fillStyle = '#ff9ecb';
+      roundRect(c, ai.x, ai.y, PW, PH, 6); c.fill();
+      c.shadowColor = '#fff'; c.fillStyle = '#fff';
+      c.beginPath(); c.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); c.fill();
+      c.shadowBlur = 0;
+    }
+  };
+  function bounce(pad, dirX) {
+    const rel = clamp((ball.y - (pad.y + PH / 2)) / (PH / 2), -1, 1);
+    const ang = rel * 0.95;
+    const sp = Math.min(600, Math.hypot(ball.vx, ball.vy) + 14);
+    ball.vx = Math.cos(ang) * sp * dirX;
+    ball.vy = Math.sin(ang) * sp;
+    ball.x = dirX > 0 ? pad.x + pad.w + ball.r : pad.x - ball.r;
+  }
+  function point(a) {
+    a.setStatus('أنت ' + ps + ' — ' + as + ' الحاسوب');
+    ball.vx = 0; ball.vy = 0; serveTimer = 0.75;
+    if (ps >= WIN || as >= WIN) {
+      over = true;
+      const win = ps >= WIN;
+      a.showOverlay({ title: win ? 'فزت! 🏆' : 'خسرت 😢', sub: 'النتيجة: ' + ps + ' — ' + as, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+    }
+  }
+  return g;
+}
+
+/* =========================================================
+   🐤 الطائر
+   ========================================================= */
+function makeFlappy() {
+  const W = 380, H = 520;
+  const GRAV = 1500, FLAP = -430;
+  const PIPE_W = 64, GAP = 158, SPACING = 215, SPEED = 178, GROUND = 64;
+  let bird, pipes, score, over, started, bob;
+  const g = {
+    title: 'الطائر', icon: '🐤', desc: 'حلّق بين الأنابيب دون أن تلمسها',
+    hint: 'انقر على الشاشة أو اضغط مسافة للطيران',
+    w: W, h: H,
+    setup(a) {
+      bird = { x: 100, y: H / 2 - 40, r: 14, vy: 0, rot: 0 };
+      pipes = []; score = 0; over = false; started = false; bob = 0;
+      a.setStatus('النقاط: 0');
+    },
+    update(dt, a) {
+      if (over) return;
+      const jump = input.pressed.has(' ') || input.pressed.has('ArrowUp') || input.pressed.has('w') || input.pointer.clicked;
+      if (!started) {
+        bob += dt; bird.y = H / 2 - 40 + Math.sin(bob * 3) * 9; bird.rot = Math.sin(bob * 3) * 0.12;
+        if (jump) { started = true; bird.vy = FLAP; pipes.push(newPipe(W + 80)); }
+        return;
+      }
+      if (jump) bird.vy = FLAP;
+      bird.vy += GRAV * dt; bird.y += bird.vy * dt;
+      bird.rot = clamp(bird.vy / 620, -0.55, 1.3);
+      if (bird.y + bird.r >= H - GROUND) { bird.y = H - GROUND - bird.r; return die(a); }
+      if (bird.y - bird.r < 0) { bird.y = bird.r; bird.vy = 0; }
+      for (const p of pipes) p.x -= SPEED * dt;
+      const last = pipes[pipes.length - 1];
+      if (!last || last.x < W - SPACING) pipes.push(newPipe(W + 40));
+      while (pipes.length && pipes[0].x + PIPE_W < -20) pipes.shift();
+      for (const p of pipes) {
+        if (!p.scored && p.x + PIPE_W < bird.x - bird.r) { p.scored = true; score++; a.setStatus('النقاط: ' + score); }
+        const gapTop = p.gapY - GAP / 2, gapBot = p.gapY + GAP / 2;
+        if (circleRect(bird.x, bird.y, bird.r, p.x, 0, PIPE_W, gapTop) ||
+            circleRect(bird.x, bird.y, bird.r, p.x, gapBot, PIPE_W, H - GROUND - gapBot)) return die(a);
+      }
+    },
+    draw(c, a) {
+      const sky = c.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#1b2a6b'); sky.addColorStop(0.55, '#2f6fae'); sky.addColorStop(1, '#7fd6e8');
+      c.fillStyle = sky; c.fillRect(0, 0, W, H);
+      c.fillStyle = 'rgba(255,255,255,.10)';
+      for (let i = 0; i < 5; i++) {
+        const cx = ((i * 137 + (performance.now() * 0.012)) % (W + 120)) - 60;
+        const cy = 60 + (i * 71) % 300;
+        c.beginPath(); c.arc(cx, cy, 26, 0, Math.PI * 2);
+        c.arc(cx + 26, cy + 6, 20, 0, Math.PI * 2);
+        c.arc(cx - 24, cy + 8, 18, 0, Math.PI * 2); c.fill();
+      }
+      for (const p of pipes) {
+        const gapTop = p.gapY - GAP / 2, gapBot = p.gapY + GAP / 2;
+        const grad = c.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
+        grad.addColorStop(0, '#2f9e44'); grad.addColorStop(0.45, '#63e06a'); grad.addColorStop(1, '#1d7a33');
+        c.fillStyle = grad;
+        roundRect(c, p.x, -10, PIPE_W, gapTop + 10, 8); c.fill();
+        roundRect(c, p.x, gapBot, PIPE_W, H - GROUND - gapBot + 10, 8); c.fill();
+      }
+      c.fillStyle = '#c8a35a'; c.fillRect(0, H - GROUND, W, GROUND);
+      c.fillStyle = '#9e7c3b'; c.fillRect(0, H - GROUND, W, 8);
+      c.save(); c.translate(bird.x, bird.y); c.rotate(bird.rot);
+      c.shadowColor = 'rgba(255,215,0,.85)'; c.shadowBlur = 18;
+      c.fillStyle = '#ffd93d';
+      c.beginPath(); c.ellipse(0, 0, bird.r + 2, bird.r, 0, 0, Math.PI * 2); c.fill();
+      c.shadowBlur = 0;
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(5, -5, 5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#111'; c.beginPath(); c.arc(7, -5, 2.4, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#ff8c00';
+      c.beginPath(); c.moveTo(14, 0); c.lineTo(24, 3); c.lineTo(14, 7); c.closePath(); c.fill();
+      c.fillStyle = '#ffb703';
+      c.beginPath(); c.ellipse(-4, 4, 8, 5, 0.3, 0, Math.PI * 2); c.fill();
+      c.restore();
+      if (!started && !over) {
+        c.fillStyle = 'rgba(0,0,0,.45)'; roundRect(c, W / 2 - 120, H / 2 + 60, 240, 46, 12); c.fill();
+        c.fillStyle = '#fff'; c.font = 'bold 16px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('انقر للبدء 🚀', W / 2, H / 2 + 83);
+      }
+    }
+  };
+  function newPipe(x) {
+    const top = 70 + Math.random() * (H - GROUND - GAP - 140);
+    return { x, gapY: top + GAP / 2, scored: false };
+  }
+  function die(a) {
+    over = true;
+    a.showOverlay({ title: 'سقطت! 💥', sub: 'نقاطك: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+  }
+  return g;
+}
+
+/* =========================================================
+   👾 غزاة الفضاء
+   ========================================================= */
+function makeInvaders() {
+  const W = 480, H = 520;
+  const COLS = 6, ROWS = 4, AW = 38, AH = 28, AGX = 14, AGY = 14, TOP = 72;
+  const LEFT = (W - (COLS * AW + (COLS - 1) * AGX)) / 2;
+  let aliens, dir, player, pBullets, eBullets, lives, score, over, cooldown, shootTimer;
+  const g = {
+    title: 'غزاة الفضاء', icon: '👾', desc: 'دافع عن الأرض وحطّم كل الغزاة',
+    hint: 'الأسهم للحركة — مسافة أو نقر لإطلاق النار',
+    w: W, h: H,
+    setup(a) {
+      aliens = [];
+      for (let r = 0; r < ROWS; r++) for (let cc = 0; cc < COLS; cc++)
+        aliens.push({ x: LEFT + cc * (AW + AGX), y: TOP + r * (AH + AGY), alive: true, color: ['#ff2d95', '#ffd700', '#00f0ff', '#7CFFB2'][r % 4] });
+      dir = 1;
+      player = { x: W / 2, y: H - 56, w: 42, h: 16, speed: 340 };
+      pBullets = []; eBullets = []; lives = 3; score = 0; over = false; cooldown = 0; shootTimer = 1.4;
+      a.setStatus('النقاط: 0 • الأرواح: ❤️❤️❤️');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (input.pointer.moved) player.x = input.pointer.x;
+      if (input.keys.has('ArrowLeft') || input.keys.has('a')) player.x -= player.speed * dt;
+      if (input.keys.has('ArrowRight') || input.keys.has('d')) player.x += player.speed * dt;
+      player.x = clamp(player.x, player.w / 2, W - player.w / 2);
+      cooldown -= dt;
+      if ((input.pressed.has(' ') || input.pointer.clicked) && cooldown <= 0) {
+        pBullets.push({ x: player.x, y: player.y - 12, vy: -580 }); cooldown = 0.28;
+      }
+      const alive = aliens.filter(al => al.alive);
+      if (alive.length === 0) {
+        over = true;
+        a.showOverlay({ title: 'أنقذت الأرض! 🌍', sub: 'النقاط: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+        return;
+      }
+      const speed = 42 + (aliens.length - alive.length) * 7;
+      for (const al of alive) al.x += dir * speed * dt;
+      let hitEdge = false;
+      for (const al of alive) if (al.x < 8 || al.x + AW > W - 8) hitEdge = true;
+      if (hitEdge) { dir *= -1; for (const al of aliens) al.y += 20; for (const al of aliens) al.x += dir * 3; }
+      for (const al of alive) if (al.y + AH > player.y - 6) {
+        over = true;
+        a.showOverlay({ title: 'غزوا الأرض 💀', sub: 'النقاط: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+        return;
+      }
+      for (const b of pBullets) b.y += b.vy * dt;
+      pBullets = pBullets.filter(b => b.y > -20);
+      for (const b of pBullets) for (const al of aliens) {
+        if (!al.alive) continue;
+        if (b.x > al.x && b.x < al.x + AW && b.y > al.y && b.y < al.y + AH) {
+          al.alive = false; b.dead = true; score += 10;
+          a.setStatus('النقاط: ' + score + ' • الأرواح: ' + '❤️'.repeat(lives));
+          break;
+        }
+      }
+      pBullets = pBullets.filter(b => !b.dead);
+      shootTimer -= dt;
+      if (shootTimer <= 0 && eBullets.length < 3) {
+        const list = aliens.filter(al => al.alive);
+        if (list.length) {
+          const src = list[randInt(0, list.length - 1)];
+          eBullets.push({ x: src.x + AW / 2, y: src.y + AH, vy: 250 });
+        }
+        shootTimer = rand(0.65, 1.6);
+      }
+      for (const b of eBullets) b.y += b.vy * dt;
+      eBullets = eBullets.filter(b => b.y < H + 20);
+      for (const b of eBullets) {
+        if (Math.abs(b.x - player.x) < player.w / 2 - 4 && b.y > player.y - 10 && b.y < player.y + player.h) {
+          b.dead = true; lives--;
+          a.setStatus('النقاط: ' + score + ' • الأرواح: ' + (lives > 0 ? '❤️'.repeat(lives) : '—'));
+          if (lives <= 0) {
+            over = true;
+            a.showOverlay({ title: 'دُمّرت السفينة 💀', sub: 'النقاط: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+          }
+        }
+      }
+      eBullets = eBullets.filter(b => !b.dead);
+    },
+    draw(c, a) {
+      c.fillStyle = '#05070f'; c.fillRect(0, 0, W, H);
+      c.fillStyle = 'rgba(255,255,255,.5)';
+      for (let i = 0; i < 60; i++) c.fillRect((i * 97) % W, (i * 173 + (performance.now() * 0.02)) % H, 1.6, 1.6);
+      for (const al of aliens) {
+        if (!al.alive) continue;
+        c.fillStyle = al.color; c.shadowColor = al.color; c.shadowBlur = 12;
+        roundRect(c, al.x, al.y, AW, AH, 7); c.fill();
+        c.shadowBlur = 0;
+        c.fillStyle = 'rgba(0,0,0,.65)';
+        c.beginPath(); c.arc(al.x + AW * 0.33, al.y + AH * 0.42, 4, 0, Math.PI * 2);
+        c.arc(al.x + AW * 0.67, al.y + AH * 0.42, 4, 0, Math.PI * 2); c.fill();
+      }
+      c.fillStyle = '#00f0ff'; c.shadowColor = '#00f0ff'; c.shadowBlur = 18;
+      c.beginPath();
+      c.moveTo(player.x, player.y - 12);
+      c.lineTo(player.x + player.w / 2, player.y + player.h);
+      c.lineTo(player.x + player.w / 2 - 8, player.y + player.h);
+      c.lineTo(player.x, player.y + 4);
+      c.lineTo(player.x - player.w / 2 + 8, player.y + player.h);
+      c.lineTo(player.x - player.w / 2, player.y + player.h);
+      c.closePath(); c.fill();
+      c.shadowBlur = 0;
+      c.fillStyle = '#ffd700'; c.shadowColor = '#ffd700'; c.shadowBlur = 10;
+      for (const b of pBullets) c.fillRect(b.x - 2, b.y, 4, 14);
+      c.fillStyle = '#ff2d95'; c.shadowColor = '#ff2d95';
+      for (const b of eBullets) c.fillRect(b.x - 2, b.y, 4, 12);
+      c.shadowBlur = 0;
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   🃏 لعبة الذاكرة
+   ========================================================= */
+function makeMemory() {
+  const W = 440, H = 440, COLS = 4, ROWS = 4, CW = 92, CH = 92, GAP = 12;
+  const OX = (W - (COLS * CW + (COLS - 1) * GAP)) / 2;
+  const OY = (H - (ROWS * CH + (ROWS - 1) * GAP)) / 2;
+  const EMOJIS = ['🍒', '🍋', '🍇', '⭐', '💎', '🔔', '🎈', '🍀'];
+  let cards, first, second, lock, moves, matched, over;
+  const g = {
+    title: 'لعبة الذاكرة', icon: '🃏', desc: 'اقلب البطاقات وطابق كل زوجين',
+    hint: 'انقر على البطاقات لكشفها — طابق كل الأزواج',
+    w: W, h: H,
+    setup(a) {
+      const deck = [];
+      for (const e of EMOJIS) { deck.push(e); deck.push(e); }
+      for (let i = deck.length - 1; i > 0; i--) { const j = randInt(0, i); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+      cards = [];
+      let k = 0;
+      for (let r = 0; r < ROWS; r++) for (let cc = 0; cc < COLS; cc++)
+        cards.push({ x: OX + cc * (CW + GAP), y: OY + r * (CH + GAP), emoji: deck[k++], flipped: false, done: false, pop: 0 });
+      first = null; second = null; lock = 0; moves = 0; matched = 0; over = false;
+      a.setStatus('الحركات: 0 • الأزواج: 0/8');
+    },
+    update(dt, a) {
+      if (over) return;
+      for (const c of cards) if (c.pop > 0) c.pop = Math.max(0, c.pop - dt * 4);
+      if (input.pointer.clicked && lock <= 0) {
+        const px = input.pointer.x, py = input.pointer.y;
+        for (const c of cards) {
+          if (c.done || c.flipped) continue;
+          if (px > c.x && px < c.x + CW && py > c.y && py < c.y + CH) {
+            c.flipped = true; c.pop = 1;
+            if (!first) first = c;
+            else if (first !== c) {
+              second = c; moves++; lock = 0.62;
+              a.setStatus('الحركات: ' + moves + ' • الأزواج: ' + matched + '/8');
+            }
+            break;
+          }
+        }
+      }
+      if (lock > 0) {
+        lock -= dt;
+        if (lock <= 0 && first && second) {
+          if (first.emoji === second.emoji) {
+            first.done = true; second.done = true; matched++;
+            a.setStatus('الحركات: ' + moves + ' • الأزواج: ' + matched + '/8');
+            if (matched === 8) {
+              over = true;
+              a.showOverlay({ title: 'أكملت اللعبة! 🎉', sub: 'عدد الحركات: ' + moves, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+            }
+          } else { first.flipped = false; second.flipped = false; }
+          first = null; second = null;
+        }
+      }
+    },
+    draw(c, a) {
+      const bg = c.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#120a24'); bg.addColorStop(1, '#0a0a16');
+      c.fillStyle = bg; c.fillRect(0, 0, W, H);
+      for (const card of cards) {
+        const shown = card.flipped || card.done;
+        const sc = 1 + card.pop * 0.08;
+        const cx = card.x + CW / 2, cy = card.y + CH / 2;
+        c.save(); c.translate(cx, cy); c.scale(sc, sc); c.translate(-cx, -cy);
+        if (shown) {
+          c.fillStyle = card.done ? 'rgba(124,255,178,.14)' : 'rgba(255,255,255,.94)';
+          c.strokeStyle = card.done ? '#7CFFB2' : 'rgba(0,240,255,.6)';
+          c.lineWidth = 2.5;
+          roundRect(c, card.x, card.y, CW, CH, 14); c.fill(); c.stroke();
+          c.font = '46px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.globalAlpha = card.done ? 0.6 : 1;
+          c.fillText(card.emoji, cx, cy + 3); c.globalAlpha = 1;
+        } else {
+          const bgc = c.createLinearGradient(card.x, card.y, card.x + CW, card.y + CH);
+          bgc.addColorStop(0, '#2b1e52'); bgc.addColorStop(1, '#15102b');
+          c.fillStyle = bgc; c.strokeStyle = 'rgba(0,240,255,.35)'; c.lineWidth = 2;
+          roundRect(c, card.x, card.y, CW, CH, 14); c.fill(); c.stroke();
+          c.fillStyle = 'rgba(0,240,255,.28)'; c.font = 'bold 34px sans-serif';
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText('?', cx, cy + 2);
+        }
+        c.restore();
+      }
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   🧩 بلوك بلاست
+   ========================================================= */
+function makeBlockBlast() {
+  const COLS = 8, ROWS = 8, CELL = 40;
+  const W = 460, H = 620;
+  const GX = (W - COLS * CELL) / 2;
+  const GY = 50;
+  const TRAY_Y = GY + ROWS * CELL + 30;
+  const SLOT_W = 140;
+  const SLOT_START = (W - 3 * SLOT_W) / 2;
+  const PREVIEW_CELL = 30;
+  const SHAPES = [
+    [[1]], [[1,1]], [[1],[1]], [[1,1,1]], [[1],[1],[1]], [[1,1],[1,1]],
+    [[1,1,1,1]], [[1],[1],[1],[1]],
+    [[1,1,1],[0,1,0]], [[0,1,0],[1,1,1]],
+    [[1,1,1],[1,0,0]], [[1,1,1],[0,0,1]],
+    [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]],
+    [[1,1],[1,0]], [[1,1],[0,1]], [[1,0],[1,1]], [[0,1],[1,1]],
+    [[1,1,1],[1,1,1]]
+  ];
+  const COLORS = ['#ff2d95', '#ffd700', '#00f0ff', '#7CFFB2', '#ff8a00', '#a78bfa'];
+  let grid, tray, dragging, dragPiece, dragOffset, score, over, justPicked;
+
+  function emptyGrid() {
+    const g = [];
+    for (let y = 0; y < ROWS; y++) { g[y] = []; for (let x = 0; x < COLS; x++) g[y][x] = null; }
+    return g;
+  }
+  function randomPiece() {
+    const shape = SHAPES[randInt(0, SHAPES.length - 1)];
+    return { shape, color: COLORS[randInt(0, COLORS.length - 1)] };
+  }
+  function refillTray() { tray = [randomPiece(), randomPiece(), randomPiece()]; }
+  function pieceWidth(p) { return p.shape[0].length; }
+  function pieceHeight(p) { return p.shape.length; }
+  function canPlace(shape, gx, gy) {
+    for (let y = 0; y < shape.length; y++) for (let x = 0; x < shape[y].length; x++) {
+      if (!shape[y][x]) continue;
+      const bx = gx + x, by = gy + y;
+      if (bx < 0 || bx >= COLS || by < 0 || by >= ROWS) return false;
+      if (grid[by][bx]) return false;
+    }
+    return true;
+  }
+  function placePiece(shape, color, gx, gy) {
+    for (let y = 0; y < shape.length; y++) for (let x = 0; x < shape[y].length; x++)
+      if (shape[y][x]) grid[gy + y][gx + x] = color;
+    const clearedRows = [], clearedCols = [];
+    for (let y = 0; y < ROWS; y++) {
+      let full = true;
+      for (let x = 0; x < COLS; x++) if (!grid[y][x]) { full = false; break; }
+      if (full) clearedRows.push(y);
+    }
+    for (let x = 0; x < COLS; x++) {
+      let full = true;
+      for (let y = 0; y < ROWS; y++) if (!grid[y][x]) { full = false; break; }
+      if (full) clearedCols.push(x);
+    }
+    const totalCells = clearedRows.length * COLS + clearedCols.length * ROWS - clearedRows.length * clearedCols.length;
+    if (totalCells > 0) {
+      for (const y of clearedRows) for (let x = 0; x < COLS; x++) grid[y][x] = null;
+      for (const x of clearedCols) for (let y = 0; y < ROWS; y++) grid[y][x] = null;
+      score += totalCells * 10 + (totalCells - 8) * 5;
+    }
+  }
+  function anyFit() {
+    for (const p of tray) {
+      if (!p) continue;
+      for (let gy = 0; gy <= ROWS - pieceHeight(p); gy++)
+        for (let gx = 0; gx <= COLS - pieceWidth(p); gx++)
+          if (canPlace(p.shape, gx, gy)) return true;
+    }
+    return false;
+  }
+  const g = {
+    title: 'بلوك بلاست', icon: '🧩', desc: 'املأ الشبكة بالقطع لمسح الصفوف',
+    hint: 'اسحب القطع إلى الشبكة — امسح صفوفاً أو أعمدة كاملة',
+    w: W, h: H,
+    setup(a) {
+      grid = emptyGrid(); refillTray();
+      dragging = false; dragPiece = null; dragOffset = { x: 0, y: 0 };
+      score = 0; over = false; justPicked = false;
+      a.setStatus('النقاط: 0');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (input.pointer.clicked && !dragging) {
+        const px = input.pointer.x, py = input.pointer.y;
+        for (let i = 0; i < tray.length; i++) {
+          const p = tray[i]; if (!p) continue;
+          const slotX = SLOT_START + i * SLOT_W;
+          const pw = pieceWidth(p) * PREVIEW_CELL, ph = pieceHeight(p) * PREVIEW_CELL;
+          const cx = slotX + (SLOT_W - pw) / 2, cy = TRAY_Y + (120 - ph) / 2;
+          if (px >= cx - 10 && px <= cx + pw + 10 && py >= cy - 10 && py <= cy + ph + 10) {
+            dragging = true; dragPiece = p; justPicked = true;
+            dragOffset = { x: (px - cx) * (CELL / PREVIEW_CELL), y: (py - cy) * (CELL / PREVIEW_CELL) };
+            break;
+          }
+        }
+      }
+      if (dragging && !input.pointer.down && !justPicked) {
+        const px = input.pointer.x - dragOffset.x, py = input.pointer.y - dragOffset.y;
+        const cellX = Math.round((px - GX) / CELL);
+        const cellY = Math.round((py - GY) / CELL);
+        if (canPlace(dragPiece.shape, cellX, cellY)) {
+          placePiece(dragPiece.shape, dragPiece.color, cellX, cellY);
+          tray = tray.filter(p => p !== dragPiece);
+          if (tray.length === 0) refillTray();
+          a.setStatus('النقاط: ' + score);
+          if (!anyFit()) {
+            over = true;
+            a.showOverlay({ title: 'انتهت اللعبة!', sub: 'نقاطك: ' + score, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+          }
+        }
+        dragging = false; dragPiece = null;
+      }
+      justPicked = false;
+    },
+    draw(c, a) {
+      c.fillStyle = '#0a0a1a'; c.fillRect(0, 0, W, H);
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+        const bx = GX + x * CELL, by = GY + y * CELL;
+        const fill = grid[y][x];
+        if (fill) {
+          c.fillStyle = fill; c.shadowColor = fill; c.shadowBlur = 8;
+          roundRect(c, bx + 2, by + 2, CELL - 4, CELL - 4, 6); c.fill(); c.shadowBlur = 0;
+        } else {
+          c.fillStyle = 'rgba(30, 30, 60, 0.4)';
+          roundRect(c, bx + 2, by + 2, CELL - 4, CELL - 4, 6); c.fill();
+        }
+      }
+      if (dragging && dragPiece) {
+        const px = input.pointer.x - dragOffset.x, py = input.pointer.y - dragOffset.y;
+        const cellX = Math.round((px - GX) / CELL);
+        const cellY = Math.round((py - GY) / CELL);
+        if (canPlace(dragPiece.shape, cellX, cellY)) {
+          c.globalAlpha = 0.4; c.fillStyle = dragPiece.color;
+          for (let y = 0; y < dragPiece.shape.length; y++) for (let x = 0; x < dragPiece.shape[y].length; x++) {
+            if (!dragPiece.shape[y][x]) continue;
+            roundRect(c, GX + (cellX + x) * CELL + 2, GY + (cellY + y) * CELL + 2, CELL - 4, CELL - 4, 6);
+            c.fill();
+          }
+          c.globalAlpha = 1;
+        }
+      }
+      for (let i = 0; i < tray.length; i++) {
+        const p = tray[i]; if (!p) continue;
+        const slotX = SLOT_START + i * SLOT_W;
+        const pw = pieceWidth(p) * PREVIEW_CELL, ph = pieceHeight(p) * PREVIEW_CELL;
+        const cx = slotX + (SLOT_W - pw) / 2, cy = TRAY_Y + (120 - ph) / 2;
+        if (dragging && dragPiece === p) continue;
+        c.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        roundRect(c, slotX + 5, TRAY_Y + 5, SLOT_W - 10, 120, 12); c.fill();
+        c.fillStyle = p.color; c.shadowColor = p.color; c.shadowBlur = 10;
+        for (let y = 0; y < p.shape.length; y++) for (let x = 0; x < p.shape[y].length; x++) {
+          if (!p.shape[y][x]) continue;
+          roundRect(c, cx + x * PREVIEW_CELL + 1, cy + y * PREVIEW_CELL + 1, PREVIEW_CELL - 2, PREVIEW_CELL - 2, 4);
+          c.fill();
+        }
+        c.shadowBlur = 0;
+      }
+      if (dragging && dragPiece) {
+        const px = input.pointer.x - dragOffset.x, py = input.pointer.y - dragOffset.y;
+        c.globalAlpha = 0.9; c.fillStyle = dragPiece.color; c.shadowColor = dragPiece.color; c.shadowBlur = 15;
+        for (let y = 0; y < dragPiece.shape.length; y++) for (let x = 0; x < dragPiece.shape[y].length; x++) {
+          if (!dragPiece.shape[y][x]) continue;
+          roundRect(c, px + x * CELL + 2, py + y * CELL + 2, CELL - 4, CELL - 4, 6); c.fill();
+        }
+        c.shadowBlur = 0; c.globalAlpha = 1;
+      }
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   ♟️ الشطرنج
+   ========================================================= */
+function makeChess() {
+  const CELL = 54, W = CELL * 8 + 48, H = CELL * 8 + 48;
+  const OX = 24, OY = 24;
+  let board, selected, legalMoves, turn, over, aiTimer;
+  const CHARS = {
+    wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+    bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟'
+  };
+  const VALUES = { K: 100000, Q: 900, R: 500, B: 330, N: 320, P: 100 };
+
+  function newBoard() {
+    const b = [];
+    for (let y = 0; y < 8; y++) { b[y] = []; for (let x = 0; x < 8; x++) b[y][x] = null; }
+    const back = ['R','N','B','Q','K','B','N','R'];
+    for (let x = 0; x < 8; x++) {
+      b[0][x] = { type: back[x], color: 'b' };
+      b[1][x] = { type: 'P', color: 'b' };
+      b[6][x] = { type: 'P', color: 'w' };
+      b[7][x] = { type: back[x], color: 'w' };
+    }
+    return b;
+  }
+  const inBoard = (x, y) => x >= 0 && x < 8 && y >= 0 && y < 8;
+
+  function getMoves(b, x, y) {
+    const p = b[y][x];
+    if (!p) return [];
+    const moves = [];
+    const dir = p.color === 'w' ? -1 : 1;
+    const enemyAt = (x, y) => inBoard(x, y) && b[y][x] && b[y][x].color !== p.color;
+    const emptyAt = (x, y) => inBoard(x, y) && !b[y][x];
+
+    if (p.type === 'P') {
+      if (emptyAt(x, y + dir)) {
+        moves.push({ x, y: y + dir });
+        const startY = p.color === 'w' ? 6 : 1;
+        if (y === startY && emptyAt(x, y + 2 * dir)) moves.push({ x, y: y + 2 * dir });
+      }
+      for (const dx of [-1, 1]) if (enemyAt(x + dx, y + dir)) moves.push({ x: x + dx, y: y + dir });
+    } else if (p.type === 'N') {
+      for (const [dx, dy] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])
+        if (inBoard(x+dx, y+dy) && (!b[y+dy][x+dx] || b[y+dy][x+dx].color !== p.color))
+          moves.push({ x: x+dx, y: y+dy });
+    } else if (p.type === 'B' || p.type === 'Q') {
+      for (const [dx, dy] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+        let nx = x+dx, ny = y+dy;
+        while (inBoard(nx, ny)) {
+          if (!b[ny][nx]) moves.push({ x: nx, y: ny });
+          else { if (b[ny][nx].color !== p.color) moves.push({ x: nx, y: ny }); break; }
+          nx += dx; ny += dy;
+        }
+      }
+    }
+    if (p.type === 'R' || p.type === 'Q') {
+      for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        let nx = x+dx, ny = y+dy;
+        while (inBoard(nx, ny)) {
+          if (!b[ny][nx]) moves.push({ x: nx, y: ny });
+          else { if (b[ny][nx].color !== p.color) moves.push({ x: nx, y: ny }); break; }
+          nx += dx; ny += dy;
+        }
+      }
+    }
+    if (p.type === 'K') {
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = x+dx, ny = y+dy;
+        if (inBoard(nx, ny) && (!b[ny][nx] || b[ny][nx].color !== p.color)) moves.push({ x: nx, y: ny });
+      }
+    }
+    return moves;
+  }
+
+  function findKing(b, color) {
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++)
+      if (b[y][x] && b[y][x].type === 'K' && b[y][x].color === color) return { x, y };
+    return null;
+  }
+
+  function isInCheck(b, color) {
+    const k = findKing(b, color);
+    if (!k) return false;
+    const opp = color === 'w' ? 'b' : 'w';
+    for (const [dx, dy] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+      const nx = k.x+dx, ny = k.y+dy;
+      if (inBoard(nx, ny)) { const p = b[ny][nx]; if (p && p.color === opp && p.type === 'N') return true; }
+    }
+    const epDir = color === 'w' ? -1 : 1;
+    for (const dx of [-1, 1]) {
+      const nx = k.x+dx, ny = k.y+epDir;
+      if (inBoard(nx, ny)) { const p = b[ny][nx]; if (p && p.color === opp && p.type === 'P') return true; }
+    }
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = k.x+dx, ny = k.y+dy;
+      if (inBoard(nx, ny)) { const p = b[ny][nx]; if (p && p.color === opp && p.type === 'K') return true; }
+    }
+    const slideChecks = [
+      { dirs: [[-1,-1],[-1,1],[1,-1],[1,1]], types: ['B','Q'] },
+      { dirs: [[-1,0],[1,0],[0,-1],[0,1]], types: ['R','Q'] }
+    ];
+    for (const sc of slideChecks) for (const [dx, dy] of sc.dirs) {
+      let nx = k.x+dx, ny = k.y+dy;
+      while (inBoard(nx, ny)) {
+        const p = b[ny][nx];
+        if (p) { if (p.color === opp && sc.types.includes(p.type)) return true; break; }
+        nx += dx; ny += dy;
+      }
+    }
+    return false;
+  }
+
+  function getLegalMoves(b, x, y) {
+    const p = b[y][x];
+    if (!p) return [];
+    const legal = [];
+    for (const m of getMoves(b, x, y)) {
+      const captured = b[m.y][m.x];
+      b[m.y][m.x] = p; b[y][x] = null;
+      let promoted = false;
+      if (p.type === 'P' && (m.y === 0 || m.y === 7)) { p.type = 'Q'; promoted = true; }
+      if (!isInCheck(b, p.color)) legal.push(m);
+      if (promoted) p.type = 'P';
+      b[y][x] = p; b[m.y][m.x] = captured;
+    }
+    return legal;
+  }
+
+  function getAllLegalMoves(b, color) {
+    const result = [];
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      const p = b[y][x];
+      if (!p || p.color !== color) continue;
+      for (const m of getLegalMoves(b, x, y)) result.push({ from: { x, y }, to: m });
+    }
+    return result;
+  }
+
+  function doMove(b, move) {
+    const p = b[move.from.y][move.from.x];
+    const captured = b[move.to.y][move.to.x];
+    b[move.to.y][move.to.x] = p; b[move.from.y][move.from.x] = null;
+    let promotedTo = null;
+    if (p.type === 'P' && (move.to.y === 0 || move.to.y === 7)) { promotedTo = p.type; p.type = 'Q'; }
+    return { from: move.from, to: move.to, captured, promotedTo };
+  }
+  function undoMove(b, u) {
+    const p = b[u.to.y][u.to.x];
+    if (u.promotedTo) p.type = u.promotedTo;
+    b[u.from.y][u.from.x] = p; b[u.to.y][u.to.x] = u.captured;
+  }
+  function evaluate(b) {
+    let s = 0;
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      const p = b[y][x];
+      if (p) s += (p.color === 'w' ? 1 : -1) * VALUES[p.type];
+    }
+    return s;
+  }
+  function minimax(b, depth, alpha, beta, maximizing) {
+    if (depth === 0) return evaluate(b);
+    const color = maximizing ? 'w' : 'b';
+    const moves = getAllLegalMoves(b, color);
+    if (moves.length === 0) {
+      if (isInCheck(b, color)) return maximizing ? -1e6 : 1e6;
+      return 0;
+    }
+    moves.sort((a, c) => (b[c.to.y][c.to.x] ? 1 : 0) - (b[a.to.y][a.to.x] ? 1 : 0));
+    if (maximizing) {
+      let best = -Infinity;
+      for (const m of moves) {
+        const u = doMove(b, m);
+        const v = minimax(b, depth-1, alpha, beta, false);
+        undoMove(b, u);
+        if (v > best) best = v;
+        if (v > alpha) alpha = v;
+        if (beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const m of moves) {
+        const u = doMove(b, m);
+        const v = minimax(b, depth-1, alpha, beta, true);
+        undoMove(b, u);
+        if (v < best) best = v;
+        if (v < beta) beta = v;
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+  }
+  function findBestAIMove(b) {
+    const moves = getAllLegalMoves(b, 'b');
+    if (moves.length === 0) return null;
+    moves.sort((a, c) => {
+      const ca = b[a.to.y][a.to.x] ? VALUES[b[a.to.y][a.to.x].type] : 0;
+      const cc = b[c.to.y][c.to.x] ? VALUES[b[c.to.y][c.to.x].type] : 0;
+      return cc - ca;
+    });
+    let best = null, bestScore = Infinity;
+    const depth = 2;
+    for (const m of moves) {
+      const u = doMove(b, m);
+      const v = minimax(b, depth-1, -Infinity, Infinity, true);
+      undoMove(b, u);
+      const jitter = rand(-15, 15);
+      if (v + jitter < bestScore) { bestScore = v + jitter; best = m; }
+    }
+    return best;
+  }
+  function makeMove(move) {
+    const p = board[move.from.y][move.from.x];
+    board[move.to.y][move.to.x] = p; board[move.from.y][move.from.x] = null;
+    if (p.type === 'P' && (move.to.y === 0 || move.to.y === 7)) p.type = 'Q';
+    selected = null; legalMoves = [];
+    turn = turn === 'w' ? 'b' : 'w';
+  }
+  function checkEnd(a) {
+    const moves = getAllLegalMoves(board, turn);
+    if (moves.length === 0) {
+      over = true;
+      if (isInCheck(board, turn)) {
+        const winner = turn === 'w' ? 'الأسود' : 'الأبيض';
+        a.showOverlay({ title: 'كش ملك! ♚', sub: winner + ' فاز', btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+      } else {
+        a.showOverlay({ title: 'تعادل 😐', sub: 'لا توجد حركات متاحة', btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+      }
+    } else a.setStatus(turn === 'w' ? 'دورك (الأبيض)' : 'دور الحاسوب...');
+  }
+
+  const g = {
+    title: 'الشطرنج', icon: '♟️', desc: 'العب ضد الحاسوب — قواعد كاملة',
+    hint: 'انقر على القطعة البيضاء ثم على المربع الهدف',
+    w: W, h: H,
+    setup(a) {
+      board = newBoard(); selected = null; legalMoves = [];
+      turn = 'w'; over = false; aiTimer = 0;
+      a.setStatus('دورك (الأبيض)');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (turn === 'b') {
+        aiTimer += dt;
+        if (aiTimer > 0.35) {
+          aiTimer = 0;
+          const move = findBestAIMove(board);
+          if (move) { makeMove(move); checkEnd(a); }
+          else checkEnd(a);
+        }
+        return;
+      }
+      if (input.pointer.clicked) {
+        const gx = Math.floor((input.pointer.x - OX) / CELL);
+        const gy = Math.floor((input.pointer.y - OY) / CELL);
+        if (!inBoard(gx, gy)) return;
+        if (selected) {
+          const dest = legalMoves.find(m => m.x === gx && m.y === gy);
+          if (dest) { makeMove({ from: { x: selected.x, y: selected.y }, to: dest }); checkEnd(a); return; }
+        }
+        const p = board[gy][gx];
+        if (p && p.color === 'w') {
+          selected = { x: gx, y: gy };
+          legalMoves = getLegalMoves(board, gx, gy);
+        } else { selected = null; legalMoves = []; }
+      }
+    },
+    draw(c, a) {
+      c.fillStyle = '#1a1a2e'; c.fillRect(0, 0, W, H);
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        c.fillStyle = (x + y) % 2 === 0 ? '#d8c8a0' : '#8a6a4a';
+        c.fillRect(OX + x * CELL, OY + y * CELL, CELL, CELL);
+      }
+      c.strokeStyle = 'rgba(0, 240, 255, 0.4)'; c.lineWidth = 3;
+      c.strokeRect(OX, OY, CELL * 8, CELL * 8);
+      if (selected) {
+        c.fillStyle = 'rgba(0, 240, 255, 0.4)';
+        c.fillRect(OX + selected.x * CELL, OY + selected.y * CELL, CELL, CELL);
+      }
+      for (const m of legalMoves) {
+        if (board[m.y][m.x]) {
+          c.strokeStyle = 'rgba(255, 45, 149, 0.85)'; c.lineWidth = 4;
+          c.beginPath(); c.arc(OX + m.x * CELL + CELL/2, OY + m.y * CELL + CELL/2, CELL * 0.42, 0, Math.PI * 2); c.stroke();
+        } else {
+          c.fillStyle = 'rgba(0, 240, 255, 0.55)';
+          c.beginPath(); c.arc(OX + m.x * CELL + CELL/2, OY + m.y * CELL + CELL/2, CELL * 0.16, 0, Math.PI * 2); c.fill();
+        }
+      }
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = 'bold ' + Math.floor(CELL * 0.72) + 'px serif';
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        const p = board[y][x]; if (!p) continue;
+        const ch = CHARS[p.color + p.type];
+        const cx = OX + x * CELL + CELL/2, cy = OY + y * CELL + CELL/2 + 2;
+        c.fillStyle = p.color === 'w' ? '#fff' : '#111';
+        c.strokeStyle = p.color === 'w' ? '#000' : '#fff'; c.lineWidth = 1.5;
+        c.strokeText(ch, cx, cy); c.fillText(ch, cx, cy);
+      }
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   ⚫ الداما
+   ========================================================= */
+function makeCheckers() {
+  const CELL = 54, W = CELL * 8 + 48, H = CELL * 8 + 48;
+  const OX = 24, OY = 24;
+  let board, selected, legalMoves, turn, over, aiTimer, mustContinueFrom;
+
+  function newBoard() {
+    const b = [];
+    for (let y = 0; y < 8; y++) { b[y] = []; for (let x = 0; x < 8; x++) b[y][x] = null; }
+    for (let y = 0; y < 3; y++) for (let x = 0; x < 8; x++)
+      if ((x + y) % 2 === 1) b[y][x] = { color: 'b', king: false };
+    for (let y = 5; y < 8; y++) for (let x = 0; x < 8; x++)
+      if ((x + y) % 2 === 1) b[y][x] = { color: 'w', king: false };
+    return b;
+  }
+  const inBoard = (x, y) => x >= 0 && x < 8 && y >= 0 && y < 8;
+
+  function getPieceMoves(b, x, y) {
+    const p = b[y][x]; if (!p) return [];
+    const moves = [];
+    const dirs = p.king ? [-1, 1] : (p.color === 'w' ? [-1] : [1]);
+    for (const dy of dirs) for (const dx of [-1, 1]) {
+      const nx = x + dx, ny = y + dy;
+      if (inBoard(nx, ny) && !b[ny][nx]) moves.push({ x: nx, y: ny, capture: false });
+      const jx = x + 2*dx, jy = y + 2*dy;
+      if (inBoard(jx, jy) && !b[jy][jx]) {
+        const mid = b[y + dy][x + dx];
+        if (mid && mid.color !== p.color) moves.push({ x: jx, y: jy, capture: true, captured: { x: x + dx, y: y + dy } });
+      }
+    }
+    return moves;
+  }
+
+  function getAllMoves(b, color) {
+    const captures = [], regulars = [];
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      const p = b[y][x];
+      if (!p || p.color !== color) continue;
+      for (const m of getPieceMoves(b, x, y)) {
+        const mv = { from: { x, y }, to: { x: m.x, y: m.y }, capture: m.capture, captured: m.captured };
+        if (m.capture) captures.push(mv); else regulars.push(mv);
+      }
+    }
+    return captures.length > 0 ? captures : regulars;
+  }
+
+  function applyMove(b, move) {
+    const p = b[move.from.y][move.from.x];
+    b[move.to.y][move.to.x] = p; b[move.from.y][move.from.x] = null;
+    if (move.captured) b[move.captured.y][move.captured.x] = null;
+    if (!p.king && ((p.color === 'w' && move.to.y === 0) || (p.color === 'b' && move.to.y === 7))) p.king = true;
+    return p;
+  }
+
+  function checkEnd(a) {
+    const moves = getAllMoves(board, turn);
+    if (moves.length === 0) {
+      over = true;
+      const winner = turn === 'w' ? 'الأسود' : 'الأبيض';
+      a.showOverlay({ title: 'انتهت اللعبة', sub: winner + ' فاز! 🏆', btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+    } else a.setStatus(turn === 'w' ? 'دورك (الأبيض)' : 'دور الحاسوب...');
+  }
+
+  function findAIMove() {
+    const moves = getAllMoves(board, 'b');
+    if (moves.length === 0) return null;
+    const captures = moves.filter(m => m.capture);
+    if (captures.length > 0) return captures[randInt(0, captures.length - 1)];
+    const forward = moves.filter(m => m.to.y > m.from.y);
+    if (forward.length > 0) return forward[randInt(0, forward.length - 1)];
+    return moves[randInt(0, moves.length - 1)];
+  }
+
+  function continueChain(a) {
+    if (!mustContinueFrom) return false;
+    const piece = board[mustContinueFrom.y][mustContinueFrom.x];
+    if (!piece) { mustContinueFrom = null; return false; }
+    const moves = getPieceMoves(board, mustContinueFrom.x, mustContinueFrom.y)
+      .filter(m => m.capture)
+      .map(m => ({ from: { ...mustContinueFrom }, to: { x: m.x, y: m.y }, capture: true, captured: m.captured }));
+    if (moves.length === 0) { mustContinueFrom = null; return false; }
+    if (turn === 'b') {
+      const mv = moves[0];
+      const p = applyMove(board, mv);
+      if (!p.king) {
+        const further = getPieceMoves(board, mv.to.x, mv.to.y).filter(m => m.capture);
+        if (further.length > 0) { mustContinueFrom = { ...mv.to }; return true; }
+      }
+      mustContinueFrom = null; turn = 'w'; checkEnd(a); return true;
+    } else {
+      selected = { ...mustContinueFrom };
+      legalMoves = moves;
+      return true;
+    }
+  }
+
+  const g = {
+    title: 'الداما', icon: '⚫', desc: 'لعبة الداما الكلاسيكية ضد الحاسوب',
+    hint: 'انقر على قطعتك ثم على المربع الهدف — الأكل إجباري',
+    w: W, h: H,
+    setup(a) {
+      board = newBoard(); selected = null; legalMoves = [];
+      turn = 'w'; over = false; aiTimer = 0; mustContinueFrom = null;
+      a.setStatus('دورك (الأبيض)');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (turn === 'b') {
+        aiTimer += dt;
+        if (aiTimer > 0.4) {
+          aiTimer = 0;
+          if (continueChain(a)) return;
+          const move = findAIMove();
+          if (!move) { checkEnd(a); return; }
+          const p = applyMove(board, move);
+          if (move.capture && !p.king) {
+            const further = getPieceMoves(board, move.to.x, move.to.y).filter(m => m.capture);
+            if (further.length > 0) { mustContinueFrom = { ...move.to }; return; }
+          }
+          turn = 'w';
+          checkEnd(a);
+        }
+        return;
+      }
+      if (input.pointer.clicked) {
+        const gx = Math.floor((input.pointer.x - OX) / CELL);
+        const gy = Math.floor((input.pointer.y - OY) / CELL);
+        if (!inBoard(gx, gy)) return;
+        if (mustContinueFrom) {
+          const dest = legalMoves.find(m => m.to.x === gx && m.to.y === gy);
+          if (dest) {
+            const p = applyMove(board, dest);
+            const further = getPieceMoves(board, dest.to.x, dest.to.y).filter(m => m.capture);
+            if (dest.capture && !p.king && further.length > 0) {
+              mustContinueFrom = { ...dest.to };
+              selected = { ...dest.to };
+              legalMoves = further.map(m => ({ from: { ...dest.to }, to: { x: m.x, y: m.y }, capture: true, captured: m.captured }));
+            } else {
+              mustContinueFrom = null; selected = null; legalMoves = [];
+              turn = 'b'; checkEnd(a);
+            }
+          }
+          return;
+        }
+        const p = board[gy][gx];
+        if (selected) {
+          const dest = legalMoves.find(m => m.to.x === gx && m.to.y === gy);
+          if (dest) {
+            const moved = applyMove(board, dest);
+            const further = getPieceMoves(board, dest.to.x, dest.to.y).filter(m => m.capture);
+            if (dest.capture && !moved.king && further.length > 0) {
+              mustContinueFrom = { ...dest.to };
+              selected = { ...dest.to };
+              legalMoves = further.map(m => ({ from: { ...dest.to }, to: { x: m.x, y: m.y }, capture: true, captured: m.captured }));
+              return;
+            }
+            selected = null; legalMoves = []; turn = 'b'; checkEnd(a);
+            return;
+          }
+        }
+        if (p && p.color === 'w') {
+          selected = { x: gx, y: gy };
+          const moves = getAllMoves(board, 'w');
+          legalMoves = moves.filter(m => m.from.x === gx && m.from.y === gy);
+        } else { selected = null; legalMoves = []; }
+      }
+    },
+    draw(c, a) {
+      c.fillStyle = '#0a0a1a'; c.fillRect(0, 0, W, H);
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        c.fillStyle = (x + y) % 2 === 0 ? '#e0d0a8' : '#6a4a2a';
+        c.fillRect(OX + x * CELL, OY + y * CELL, CELL, CELL);
+      }
+      if (selected) {
+        c.fillStyle = 'rgba(0, 240, 255, 0.4)';
+        c.fillRect(OX + selected.x * CELL, OY + selected.y * CELL, CELL, CELL);
+      }
+      for (const m of legalMoves) {
+        c.fillStyle = 'rgba(124, 255, 178, 0.65)';
+        c.beginPath(); c.arc(OX + m.to.x * CELL + CELL/2, OY + m.to.y * CELL + CELL/2, CELL * 0.18, 0, Math.PI * 2); c.fill();
+      }
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        const p = board[y][x]; if (!p) continue;
+        const cx = OX + x * CELL + CELL/2, cy = OY + y * CELL + CELL/2;
+        const r = CELL * 0.4;
+        c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = 6;
+        c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2);
+        c.fillStyle = p.color === 'w' ? '#f0f0f0' : '#1a1a1a'; c.fill();
+        c.strokeStyle = p.color === 'w' ? '#888' : '#555'; c.lineWidth = 2; c.stroke();
+        c.shadowBlur = 0;
+        if (p.king) {
+          c.fillStyle = p.color === 'w' ? '#d4af37' : '#ffd700';
+          c.font = 'bold ' + Math.floor(CELL * 0.4) + 'px serif';
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText('♛', cx, cy + 1);
+        }
+      }
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   🎱 البلياردو
+   ========================================================= */
+function makeBilliards() {
+  const W = 560, H = 340;
+  const MARGIN = 30;
+  const TABLE_X = MARGIN, TABLE_Y = MARGIN;
+  const TABLE_W = W - 2 * MARGIN, TABLE_H = H - 2 * MARGIN;
+  const BALL_R = 9;
+  const POCKET_R = 16;
+
+  const pockets = [
+    { x: TABLE_X, y: TABLE_Y },
+    { x: TABLE_X + TABLE_W / 2, y: TABLE_Y },
+    { x: TABLE_X + TABLE_W, y: TABLE_Y },
+    { x: TABLE_X, y: TABLE_Y + TABLE_H },
+    { x: TABLE_X + TABLE_W / 2, y: TABLE_Y + TABLE_H },
+    { x: TABLE_X + TABLE_W, y: TABLE_Y + TABLE_H }
+  ];
+
+  let balls, cueBall, potted, strokes, over;
+
+  function setupBalls() {
+    balls = [];
+    cueBall = { x: TABLE_X + TABLE_W * 0.25, y: TABLE_Y + TABLE_H / 2, vx: 0, vy: 0, color: '#ffffff', isCue: true, potted: false };
+    balls.push(cueBall);
+    const colors = ['#ff2d95', '#ffd700', '#00f0ff', '#7CFFB2', '#ff8a00', '#a78bfa', '#ff5577'];
+    const dx = BALL_R * Math.sqrt(3) + 1;
+    const dy = BALL_R * 2 + 1;
+    const apexX = TABLE_X + TABLE_W * 0.65;
+    const apexY = TABLE_Y + TABLE_H / 2;
+    const positions = [
+      [apexX, apexY],
+      [apexX + dx, apexY - dy/2], [apexX + dx, apexY + dy/2],
+      [apexX + 2*dx, apexY - 3*dy/2], [apexX + 2*dx, apexY - dy/2],
+      [apexX + 2*dx, apexY + dy/2], [apexX + 2*dx, apexY + 3*dy/2]
+    ];
+    for (let i = 0; i < positions.length; i++)
+      balls.push({ x: positions[i][0], y: positions[i][1], vx: 0, vy: 0, color: colors[i], potted: false });
+  }
+
+  function isMoving() {
+    return balls.some(b => !b.potted && (Math.abs(b.vx) > 0.5 || Math.abs(b.vy) > 0.5));
+  }
+
+  function updatePhysics(dt) {
+    const FRICTION = 0.985;
+    const STOP_THRESHOLD = 5;
+    const SUBSTEPS = 4;
+    const sdt = dt / SUBSTEPS;
+    for (let sub = 0; sub < SUBSTEPS; sub++) {
+      for (const b of balls) {
+        if (b.potted) continue;
+        b.x += b.vx * sdt; b.y += b.vy * sdt;
+        b.vx *= FRICTION; b.vy *= FRICTION;
+        if (Math.abs(b.vx) < STOP_THRESHOLD) b.vx = 0;
+        if (Math.abs(b.vy) < STOP_THRESHOLD) b.vy = 0;
+      }
+      for (const b of balls) {
+        if (b.potted) continue;
+        if (b.x - BALL_R < TABLE_X) { b.x = TABLE_X + BALL_R; b.vx = Math.abs(b.vx) * 0.85; }
+        if (b.x + BALL_R > TABLE_X + TABLE_W) { b.x = TABLE_X + TABLE_W - BALL_R; b.vx = -Math.abs(b.vx) * 0.85; }
+        if (b.y - BALL_R < TABLE_Y) { b.y = TABLE_Y + BALL_R; b.vy = Math.abs(b.vy) * 0.85; }
+        if (b.y + BALL_R > TABLE_Y + TABLE_H) { b.y = TABLE_Y + TABLE_H - BALL_R; b.vy = -Math.abs(b.vy) * 0.85; }
+      }
+      for (let i = 0; i < balls.length; i++) {
+        if (balls[i].potted) continue;
+        for (let j = i + 1; j < balls.length; j++) {
+          if (balls[j].potted) continue;
+          const a = balls[i], b = balls[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < BALL_R * 2 && dist > 0.001) {
+            const nx = dx / dist, ny = dy / dist;
+            const dvx = b.vx - a.vx, dvy = b.vy - a.vy;
+            const dvn = dvx * nx + dvy * ny;
+            if (dvn < 0) {
+              a.vx += dvn * nx; a.vy += dvn * ny;
+              b.vx -= dvn * nx; b.vy -= dvn * ny;
+              const overlap = BALL_R * 2 - dist;
+              a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
+              b.x += nx * overlap / 2; b.y += ny * overlap / 2;
+            }
+          }
+        }
+      }
+      for (const b of balls) {
+        if (b.potted) continue;
+        for (const p of pockets) {
+          if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_R) {
+            if (b.isCue) {
+              b.x = TABLE_X + TABLE_W * 0.25; b.y = TABLE_Y + TABLE_H / 2;
+              b.vx = 0; b.vy = 0;
+            } else {
+              b.potted = true; b.vx = 0; b.vy = 0; potted++;
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  const g = {
+    title: 'البلياردو', icon: '🎱', desc: 'أدخل كل الكرات في الجيوب',
+    hint: 'حرّك الفأرة للتصويب — انقر للإطلاق',
+    w: W, h: H,
+    setup(a) {
+      setupBalls();
+      potted = 0; strokes = 0; over = false;
+      a.setStatus('الكرات المُدخلة: 0/7 • الضربات: 0');
+    },
+    update(dt, a) {
+      if (over) return;
+      if (isMoving()) { updatePhysics(dt); return; }
+
+      for (const b of balls) { b.vx = 0; b.vy = 0; }
+
+      if (potted >= 7) {
+        over = true;
+        a.showOverlay({ title: 'فزت! 🎉', sub: 'عدد الضربات: ' + strokes, btn: 'إعادة اللعب', action: () => { hideOverlay(); g.setup(a); } });
+        return;
+      }
+
+      if (input.pointer.clicked) {
+        const dx = input.pointer.x - cueBall.x;
+        const dy = input.pointer.y - cueBall.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 5) {
+          const speed = Math.min(1000, dist * 4);
+          cueBall.vx = (dx / dist) * speed;
+          cueBall.vy = (dy / dist) * speed;
+          strokes++;
+          a.setStatus('الكرات المُدخلة: ' + potted + '/7 • الضربات: ' + strokes);
+        }
+      }
+    },
+    draw(c, a) {
+      c.fillStyle = '#0a0a1a'; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#5a3a1a';
+      roundRect(c, TABLE_X - 10, TABLE_Y - 10, TABLE_W + 20, TABLE_H + 20, 14); c.fill();
+      c.fillStyle = '#1a5a2a';
+      roundRect(c, TABLE_X, TABLE_Y, TABLE_W, TABLE_H, 6); c.fill();
+
+      for (const p of pockets) {
+        c.fillStyle = '#000';
+        c.beginPath(); c.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2); c.fill();
+      }
+
+      if (!isMoving() && !over) {
+        const dx = input.pointer.x - cueBall.x;
+        const dy = input.pointer.y - cueBall.y;
+        const len = Math.hypot(dx, dy);
+        if (len > 5) {
+          const nx = dx / len, ny = dy / len;
+          const power = Math.min(len, 250) / 250;
+          c.strokeStyle = 'rgba(255, 255, 255, ' + (0.35 + power * 0.5) + ')';
+          c.lineWidth = 2; c.setLineDash([6, 6]);
+          c.beginPath();
+          c.moveTo(cueBall.x, cueBall.y);
+          c.lineTo(cueBall.x + nx * 160, cueBall.y + ny * 160);
+          c.stroke();
+          c.setLineDash([]);
+        }
+      }
+
+      for (const b of balls) {
+        if (b.potted) continue;
+        const grad = c.createRadialGradient(b.x - BALL_R/3, b.y - BALL_R/3, BALL_R/4, b.x, b.y, BALL_R);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.55, b.color);
+        grad.addColorStop(1, b.color);
+        c.shadowColor = b.color; c.shadowBlur = 10;
+        c.fillStyle = grad;
+        c.beginPath(); c.arc(b.x, b.y, BALL_R, 0, Math.PI * 2); c.fill();
+        c.shadowBlur = 0;
+      }
+    }
+  };
+  return g;
+}
+
+/* =========================================================
+   المكتبة
+   ========================================================= */
+const FACTORIES = [
+  makeSnake, makeBreakout, makePong, makeFlappy, makeInvaders, makeMemory,
+  makeBlockBlast, makeChess, makeCheckers, makeBilliards
+];
+
+FACTORIES.forEach((factory) => {
+  const meta = factory();
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'card';
+  card.innerHTML =
+    '<span class="icon">' + meta.icon + '</span>' +
+    '<h3>' + meta.title + '</h3>' +
+    '<p>' + meta.desc + '</p>';
+  card.addEventListener('click', () => startGame(factory));
+  libraryEl.appendChild(card);
+});
+</script>
+</body>
+</html>

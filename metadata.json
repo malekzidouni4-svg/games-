@@ -1,0 +1,6 @@
+{
+  "name": "مكتبة ألعاب الأركيد | Arcade Game Hub",
+  "description": "مكتبة ألعاب تفاعلية متنوعة تضم ألعاب الثعبان النيون، كاسر القوالب، أحجية 2048، بطاقات الذاكرة، تفادي الفضاء، واختبار سرعة ردود الفعل مع نظام أرقام قياسية ومؤثرات صوتية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
